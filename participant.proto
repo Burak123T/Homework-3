@@ -9,7 +9,7 @@ message SendChatReq {
 }
 
 message SendChatResp {
-    bytes confirmation = 1;
+    bool confirmation = 1;
 }
 
 service Participant {
