@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "github.com/Burak123T/Homework_3/participant";
+
+message SendChatReq {
+    string sender = 1;
+    string recipient = 2;
+    string chatmessage = 3;
+}
+
+message SendChatResp {
+    bytes confirmation = 1;
+}
+
+service Participant {
+    rpc Create(SendChatReq) returns (SendChatResp);
+}
