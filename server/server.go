@@ -6,7 +6,6 @@ import (
 	chitchat "handin3chitchat/chitchat"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -18,7 +17,8 @@ type Server struct {
 	chitchat.UnimplementedChatServiceServer
 }
 
-var users = make(map[int]chitchat.ChatService_JoinServer)
+var msgCh = make(chan *chitchat.ClientMessage)
+var userCount = 0
 
 func main() {
 
@@ -66,13 +66,18 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 	defer mutex.Unlock() //defer?
 
 	mutex.Lock() //We lock the user map to ensure consistency in the shared resource when joining a user.
-	users[int(User.Id)] = userStream
+	userCount++
 	defer mutex.Unlock() //defer?
 
 	// Send and broadcast a welcome message
 	welcomeMessage := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", User.Name, lamport)
-	Broadcast("ServerMessage", welcomeMessage, lamport)
-
+	//create message
+	message := &chitchat.ClientMessage{
+		Name:    User.Name,
+		Text:    welcomeMessage,
+		Lamport: lamport,
+	}
+	msgCh <- message
 	return nil
 }
 
@@ -88,28 +93,16 @@ func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessag
 	message.Lamport = lamport
 
 	// Broadcast the message to all connected clients with the updated Lamport timestamp.
-	Broadcast(message.Name, message.Text, message.Lamport)
+	//Broadcast(message.Name, message.Text, message.Lamport)
 
+	//make it for range of users
+	for i := 0; i < userCount; i++ {
+		msgCh <- message
+	}
 	// Return a success response (Nothing) to indicate a successful message broadcast (in accordance with the protocol ).
 	return &chitchat.SentChatResponse{}, nil
 }
 
-func Broadcast(name, text string, lamport int32) {
-	//log the broadcasted method (cast from int32 to int and then convert to string...)
-	log.Printf(name, ": ", text, strconv.Itoa(int(lamport)))
-
-	//We iterate over the connected users and send the message
-	for key, value := range users {
-		//create message
-		message := &chitchat.ServerMessage{
-			Name:    name,
-			Text:    text,
-			Lamport: lamport,
-		}
-		//send message
-		err := value.Send(message)
-		if err != nil {
-			log.Printf("Server failed to broadcast message with lamport timestamp %d to user %d: %v", lamport, key, err)
-		}
-	}
+func BroadcastListener(User *chitchat.User) *chitchat.ClientMessage {
+	return <-msgCh
 }
