@@ -49,6 +49,7 @@ func main() {
 
 	//Initialize a join stream and set the join stream in chatClient
 	joinStream, err := client.Join(context.Background(), user)
+	fmt.Println("are ya ready kids")
 	if err != nil {
 		log.Fatalf("Ouch. Failed to join the chat: %v\n", err)
 	}
@@ -121,7 +122,8 @@ func (chatClient *chatClientStruct) CreateUser(client chitchat.ChatServiceClient
 			continue //prompt the user to enter username again
 		}
 		chatClient.name = username
-		fmt.Println("Hello, %s. You are new ready to start chatting!")
+		//establish connection missing
+		log.Printf("Hello, %s. You are new ready to start chatting!", username)
 		//break out of the loop since we have a username
 		break
 	}

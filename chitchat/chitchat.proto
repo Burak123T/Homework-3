@@ -15,17 +15,19 @@ message ServerMessage {
     int32 lamport = 3;
 }
 
+message SentChatResponse {
+    bool confirmation = 1;
+}
+
 message User {
     int32 id = 1;
     string name = 2;
     int32 lamport = 3;
 }
 
-message Nothing {} 
-
 service ChatService {
     rpc Join(User) returns (stream ServerMessage);
-    rpc Leave(User) returns (Nothing);
-    rpc SendMessage (ClientMessage) returns (Nothing);
+    rpc Leave(User) returns (SentChatResponse);
+    rpc SendMessage (ClientMessage) returns (SentChatResponse);
 }
 

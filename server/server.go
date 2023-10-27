@@ -56,7 +56,7 @@ var mutex sync.Mutex //We define a mutex to ensure only one client accesses the 
 //to maintain integrity
 
 func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinServer) error {
-
+	fmt.Print(User.Name)
 	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
 	userLamport := User.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
@@ -71,7 +71,7 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 
 	// Send and broadcast a welcome message
 	welcomeMessage := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", User.Name, lamport)
-	s.Broadcast("ServerMessage", welcomeMessage, lamport)
+	Broadcast("ServerMessage", welcomeMessage, lamport)
 
 	return nil
 }
@@ -87,13 +87,13 @@ func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessag
 	message.Lamport = lamport
 
 	// Broadcast the message to all connected clients with the updated Lamport timestamp.
-	s.Broadcast(message.Name, message.Text, message.Lamport)
+	Broadcast(message.Name, message.Text, message.Lamport)
 
 	// Return a success response (Nothing) to indicate a successful message broadcast (in accordance with the protocol ).
 	return &chitchat.Nothing{}, nil
 }
 
-func (s *Server) Broadcast(name, text string, lamport int32) {
+func Broadcast(name, text string, lamport int32) {
 	//log the broadcasted method (cast from int32 to int and then convert to string...)
 	log.Printf(name, ": ", text, strconv.Itoa(int(lamport)))
 
