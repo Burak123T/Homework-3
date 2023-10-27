@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ChatService_Join_FullMethodName        = "/chitchat.ChatService/Join"
-	ChatService_Leave_FullMethodName       = "/chitchat.ChatService/Leave"
-	ChatService_SendMessage_FullMethodName = "/chitchat.ChatService/SendMessage"
+	ChatService_Join_FullMethodName              = "/chitchat.ChatService/Join"
+	ChatService_Leave_FullMethodName             = "/chitchat.ChatService/Leave"
+	ChatService_SendMessage_FullMethodName       = "/chitchat.ChatService/SendMessage"
+	ChatService_BroadcastListener_FullMethodName = "/chitchat.ChatService/BroadcastListener"
 )
 
 // ChatServiceClient is the client API for ChatService service.
@@ -31,6 +32,7 @@ type ChatServiceClient interface {
 	Join(ctx context.Context, in *User, opts ...grpc.CallOption) (ChatService_JoinClient, error)
 	Leave(ctx context.Context, in *User, opts ...grpc.CallOption) (*SentChatResponse, error)
 	SendMessage(ctx context.Context, in *ClientMessage, opts ...grpc.CallOption) (*SentChatResponse, error)
+	BroadcastListener(ctx context.Context, in *User, opts ...grpc.CallOption) (*ServerMessage, error)
 }
 
 type chatServiceClient struct {
@@ -91,6 +93,15 @@ func (c *chatServiceClient) SendMessage(ctx context.Context, in *ClientMessage, 
 	return out, nil
 }
 
+func (c *chatServiceClient) BroadcastListener(ctx context.Context, in *User, opts ...grpc.CallOption) (*ServerMessage, error) {
+	out := new(ServerMessage)
+	err := c.cc.Invoke(ctx, ChatService_BroadcastListener_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility
@@ -98,6 +109,7 @@ type ChatServiceServer interface {
 	Join(*User, ChatService_JoinServer) error
 	Leave(context.Context, *User) (*SentChatResponse, error)
 	SendMessage(context.Context, *ClientMessage) (*SentChatResponse, error)
+	BroadcastListener(context.Context, *User) (*ServerMessage, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -113,6 +125,9 @@ func (UnimplementedChatServiceServer) Leave(context.Context, *User) (*SentChatRe
 }
 func (UnimplementedChatServiceServer) SendMessage(context.Context, *ClientMessage) (*SentChatResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+}
+func (UnimplementedChatServiceServer) BroadcastListener(context.Context, *User) (*ServerMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BroadcastListener not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 
@@ -184,6 +199,24 @@ func _ChatService_SendMessage_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_BroadcastListener_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(User)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).BroadcastListener(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_BroadcastListener_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).BroadcastListener(ctx, req.(*User))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -198,6 +231,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendMessage",
 			Handler:    _ChatService_SendMessage_Handler,
+		},
+		{
+			MethodName: "BroadcastListener",
+			Handler:    _ChatService_BroadcastListener_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

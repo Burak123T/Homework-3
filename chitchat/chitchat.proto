@@ -29,5 +29,6 @@ service ChatService {
     rpc Join(User) returns (stream ServerMessage);
     rpc Leave(User) returns (SentChatResponse);
     rpc SendMessage (ClientMessage) returns (SentChatResponse);
+    rpc BroadcastListener(User) returns (ServerMessage);
 }
 

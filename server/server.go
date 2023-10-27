@@ -76,21 +76,22 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 	return nil
 }
 
-func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Nothing, error) {
+func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.SentChatResponse, error) {
+	fmt.Println(" - ", message.Lamport, ":", message.Text)
 
 	messageLamport := message.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
-	mutex.Lock()
+	//mutex.Lock()
 	lamport = max(lamport, messageLamport)
 	lamport++
-	defer mutex.Unlock()
+	//defer mutex.Unlock()
 	message.Lamport = lamport
 
 	// Broadcast the message to all connected clients with the updated Lamport timestamp.
 	Broadcast(message.Name, message.Text, message.Lamport)
 
 	// Return a success response (Nothing) to indicate a successful message broadcast (in accordance with the protocol ).
-	return &chitchat.Nothing{}, nil
+	return &chitchat.SentChatResponse{}, nil
 }
 
 func Broadcast(name, text string, lamport int32) {

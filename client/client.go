@@ -50,8 +50,12 @@ func main() {
 	//Initialize a join stream and set the join stream in chatClient
 	joinStream, err := client.Join(context.Background(), user)
 	fmt.Println("are ya ready kids")
+
 	if err != nil {
 		log.Fatalf("Ouch. Failed to join the chat: %v\n", err)
+	}
+	if joinStream != nil {
+		fmt.Println("Successfully recieved joinStream from server")
 	}
 	chatClient.stream = joinStream
 
@@ -81,9 +85,12 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			Text:    message,
 			Lamport: lamport,
 		}
-		_, err = client.SendMessage(context.Background(), clientMessage)
+		serverResponse, err := client.SendMessage(context.Background(), clientMessage)
 		if err != nil {
 			log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
+		}
+		if serverResponse != nil {
+			fmt.Println("Successfully sent message to server")
 		}
 	}
 }
