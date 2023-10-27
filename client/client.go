@@ -102,6 +102,9 @@ func (chatClient *chatClientStruct) ReceiveMessage() {
 		if err != nil {
 			log.Fatalf("Failed to recieve message from server: %v\n", err)
 		}
+		if serverMessage == nil {
+			log.Fatalf("serverMessage returned nil")
+		}
 
 		//Find lamport timestamp of incoming message, select the highest and increment.
 		incomingLamport := serverMessage.Lamport
