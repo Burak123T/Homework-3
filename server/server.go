@@ -103,6 +103,7 @@ func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessag
 	return &chitchat.SentChatResponse{}, nil
 }
 
-func BroadcastListener(User *chitchat.User) *chitchat.ClientMessage {
-	return <-msgCh
+func (s *Server) BroadcastListener(ctx context.Context, User *chitchat.User) (*chitchat.ClientMessage, error) {
+	message := <-msgCh
+	return message, nil
 }

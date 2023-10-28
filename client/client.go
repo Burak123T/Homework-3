@@ -61,7 +61,7 @@ func main() {
 
 	//We start go routines for sending and recieving messages.
 	go chatClient.SendChatMessage(client)
-	go chatClient.ReceiveMessage()
+	go chatClient.ReceiveMessage(client, user)
 
 	//keep the main function running
 	select {}
@@ -95,9 +95,16 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 	}
 }
 
-func (chatClient *chatClientStruct) ReceiveMessage() {
+func (chatClient *chatClientStruct) ReceiveMessage(client chitchat.ChatServiceClient, user *chitchat.User) {
 	for {
-		//recieve a message from the server
+		message, err := client.BroadcastListener(context.Background(), user)
+		if err != nil {
+			//log.Println("Oh no! Failed to recieve message from server")
+		} else {
+			log.Println(" - ", message.Text)
+		}
+
+		/*//recieve a message from the server
 		serverMessage, err := chatClient.stream.Recv()
 		if err != nil {
 			log.Fatalf("Failed to recieve message from server: %v\n", err)
@@ -112,7 +119,7 @@ func (chatClient *chatClientStruct) ReceiveMessage() {
 		lamport++
 
 		//Displaying the recieved chat message with lamport time stamp:
-		log.Printf("[%d] %s : \n %s", lamport, serverMessage.Name, serverMessage.Text)
+		log.Printf("[%d] %s : \n %s", lamport, serverMessage.Name, serverMessage.Text)*/
 	}
 }
 
