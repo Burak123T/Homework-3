@@ -60,14 +60,10 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
 	userLamport := User.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
-	mutex.Lock()
 	lamport = max(lamport, userLamport)
 	lamport++
-	defer mutex.Unlock() //defer?
 
-	mutex.Lock() //We lock the user map to ensure consistency in the shared resource when joining a user.
 	userCount++
-	defer mutex.Unlock() //defer?
 
 	// Send and broadcast a welcome message
 	welcomeMessage := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", User.Name, lamport)
@@ -96,14 +92,19 @@ func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessag
 	//Broadcast(message.Name, message.Text, message.Lamport)
 
 	//make it for range of users
+	fmt.Printf("Hello! have a nice day! The user count is %d\n", userCount)
 	for i := 0; i < userCount; i++ {
 		msgCh <- message
+		fmt.Println("Added the message to the message channel!!!!!")
 	}
 	// Return a success response (Nothing) to indicate a successful message broadcast (in accordance with the protocol ).
 	return &chitchat.SentChatResponse{}, nil
 }
 
-func (s *Server) BroadcastListener(ctx context.Context, User *chitchat.User) (*chitchat.ClientMessage, error) {
-	message := <-msgCh
-	return message, nil
+func (s *Server) BroadcastListener(context.Context, *chitchat.User) (*chitchat.ClientMessage, error) {
+	for {
+		clientMessage := <-msgCh
+		// Send the received message to the client
+		return clientMessage, nil
+	}
 }
