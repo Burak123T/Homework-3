@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"handin3chitchat/chitchat"
 	"log"
 	"math/rand"
 	"os"
 	"strings"
 	"time"
+
+	"homework3/chitchat"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -81,7 +82,7 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			Text:    message,
 			Lamport: lamport,
 		}
-		_, err2 := client.SendMessage(context.Background(), clientMessage)
+		_, err2 := client.BroadcastChatMessage(context.Background(), clientMessage)
 		if err2 != nil {
 			log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
 		}
@@ -90,21 +91,9 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 
 func (chatClient *chatClientStruct) ReceiveMessage(client chitchat.ChatServiceClient, user *chitchat.User) {
 	for {
-<<<<<<< HEAD
 
 		//recieve a message from the server
 		userStreamServerMessage, err := chatClient.stream.Recv()
-=======
-		message, err := client.BroadcastListener(context.Background(), user)
-		if err != nil {
-			//log.Println("Oh no! Failed to recieve message from server")
-		} else {
-			log.Println(" - ", message.Text)
-		}
-
-		/*//recieve a message from the server
-		serverMessage, err := chatClient.stream.Recv()
->>>>>>> 805f037ccd99415c430b1876f8bd1249c5f6be42
 		if err != nil {
 			log.Fatalf("Failed to recieve message from server: %v\n", err)
 		}
@@ -118,11 +107,7 @@ func (chatClient *chatClientStruct) ReceiveMessage(client chitchat.ChatServiceCl
 		lamport++
 
 		//Displaying the recieved chat message with lamport time stamp:
-<<<<<<< HEAD
 		log.Printf(" - [%d] %s : %s", lamport, userStreamServerMessage.Name, userStreamServerMessage.Text)
-=======
-		log.Printf("[%d] %s : \n %s", lamport, serverMessage.Name, serverMessage.Text)*/
->>>>>>> 805f037ccd99415c430b1876f8bd1249c5f6be42
 	}
 }
 
@@ -160,5 +145,4 @@ func readUserInput() (string, error) {
 	//Trim message whitespace from beginning and end.
 	userInput = strings.TrimSpace(userInput)
 	return userInput, err
-
 }

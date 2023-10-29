@@ -1,4 +1,4 @@
-module github.com/Burak123T/Homework_3
+module homework3
 
 go 1.21.1
 

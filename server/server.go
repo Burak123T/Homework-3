@@ -3,15 +3,13 @@ package main
 import (
 	"context"
 	"fmt"
-	chitchat "handin3chitchat/chitchat"
+	chitchat "homework3/chitchat"
 	"log"
 	"net"
 	"sync"
 
 	"google.golang.org/grpc"
 )
-
-var lamport int32
 
 type UserStream struct {
 	UserId int32
@@ -23,11 +21,9 @@ type Server struct {
 	chitchat.UnimplementedChatServiceServer
 }
 
-var msgCh = make(chan *chitchat.ClientMessage)
-var userCount = 0
-
 // create map of all userstreams (streans to connected clients)
 var userStreams = make(map[int32]*UserStream)
+var lamport int32
 
 func main() {
 
@@ -80,7 +76,7 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 		Text:    welcomeMessage,
 		Lamport: lamport,
 	}
-	s.SendMessage(context.Background(), message)
+	s.BroadcastChatMessage(context.Background(), message)
 
 	//Add user to map of userstreams.
 	newUserStream := &UserStream{
@@ -93,7 +89,7 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 	select {}
 }
 
-func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.SentChatResponse, error) {
+func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
 	fmt.Println(" - ", message.Lamport, ":", message.Text)
 
 	messageLamport := message.Lamport
@@ -111,7 +107,7 @@ func (s *Server) SendMessage(ctx context.Context, message *chitchat.ClientMessag
 		}
 	}
 
-	return &chitchat.SentChatResponse{}, nil
+	return &chitchat.Confirmation{}, nil
 }
 
 //not used anymore
