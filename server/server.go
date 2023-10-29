@@ -6,7 +6,6 @@ import (
 	chitchat "homework3/chitchat"
 	"log"
 	"net"
-	"sync"
 
 	"google.golang.org/grpc"
 )
@@ -17,7 +16,6 @@ type UserStream struct {
 }
 
 type Server struct {
-	userStreams map[int32]*UserStream
 	chitchat.UnimplementedChatServiceServer
 }
 
@@ -58,9 +56,7 @@ func main() {
 	select {}
 }
 
-var mutex sync.Mutex //We define a mutex to ensure only one client accesses the users map at a time
-//to maintain integrity
-
+// Function to allow clients to join the server
 func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinServer) error {
 
 	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
@@ -90,15 +86,18 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 }
 
 func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
-	fmt.Println(" - ", message.Lamport, ":", message.Text)
 
 	messageLamport := message.Lamport
-	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
-	//mutex.Lock()
 	lamport = max(lamport, messageLamport)
 	lamport++
-	//defer mutex.Unlock()
+
 	message.Lamport = lamport
+
+	if message.Text == "/disconnect\n" {
+		_ = fmt.Sprintf("Participant %s has left the Chitty-Chat at Lamport time %d", message.Name, lamport)
+	} else {
+		fmt.Println(" - ", message.Name, ", ", message.Lamport, ":", message.Text)
+	}
 
 	//Send the message to all connected users by cycling through the userStreams and sending the message.
 	for _, userStream := range userStreams {
@@ -109,12 +108,3 @@ func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.Cli
 
 	return &chitchat.Confirmation{}, nil
 }
-
-//not used anymore
-/*func (s *Server) BroadcastListener(context.Context, *chitchat.User) (*chitchat.ClientMessage, error) {
-	for {
-		clientMessage := <-msgCh
-		// Send the received message to the client
-		return clientMessage, nil
-	}
-}*/

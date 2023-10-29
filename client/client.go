@@ -83,6 +83,11 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			Lamport: lamport,
 		}
 		_, err2 := client.BroadcastChatMessage(context.Background(), clientMessage)
+
+		if message == "/disconnect" {
+			os.Exit(0)
+		}
+
 		if err2 != nil {
 			log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
 		}
