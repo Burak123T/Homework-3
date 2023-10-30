@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -67,6 +68,17 @@ func main() {
 	go chatClient.SendChatMessage(client)
 	go chatClient.ReceiveMessage(client, user)
 
+	//create channel for listening for client closing down unexpectedly (for instance ctrl+c)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		//Disconnect the user and print "Disconnected", then exit.
+		log.Println("Disconnected")
+		client.Leave(context.Background(), user)
+		os.Exit(0)
+	}()
+
 	//keep the main function running
 	select {}
 }
@@ -85,6 +97,7 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			client.Leave(context.Background(), user)
 			//since the user won't recieve the broadcast leave message from the server after disconnecting we print a leave message for the client.
 			log.Print("You have left the chat!")
+			os.Exit(0)
 		} else {
 			lamport++
 			//Create new clientMessage and send it to the server by calling BroadcastChatmessage.

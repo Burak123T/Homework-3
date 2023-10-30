@@ -17,7 +17,6 @@ type UserStream struct {
 }
 
 type Server struct {
-	userStreams map[int32]*UserStream
 	chitchat.UnimplementedChatServiceServer
 }
 
