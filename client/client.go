@@ -28,7 +28,7 @@ var user *chitchat.User
 
 func main() {
 
-	//Server address
+	//Server address where gRPC server is running
 	const serverAddress = "localhost:5678"
 
 	//We initialize lamport clock
@@ -36,29 +36,31 @@ func main() {
 
 	//we create insecure transport credentials (in the context of this assignment we choose not to worry about security):
 	transportCreds := insecure.NewCredentials()
-	//Establish a grpc connection to the server
+	//Establish a grpc connection to the server using addres and tansport credentials
 	conn, err := grpc.Dial(serverAddress, grpc.WithTransportCredentials(transportCreds))
 	if err != nil {
 		log.Fatalf("Failed to connect to gRPC server ... : %v\n", err)
 	}
+	//defer call to conn.Close() to ensure connection is closed when main method exits.
 	defer conn.Close()
 
+	//create client and user
 	client := chitchat.NewChatServiceClient(conn)
 	chatClient := chatClientStruct{}
-
-	//create user
 	user = chatClient.CreateUser(client)
 
+	//sleep to simulate wait time for connection to be established...
 	log.Println("Connecting to the gRPC server at ... : " + serverAddress)
 	time.Sleep(time.Millisecond * time.Duration(1000))
+
 	//Initialize a join stream and set the join stream in chatClient
 	joinStream, err := client.Join(context.Background(), user)
-
 	if err != nil {
 		log.Fatalf("Ouch. Failed to join the chat: %v\n", err)
 	}
 	chatClient.stream = joinStream
 
+	//print welcome message.
 	log.Printf("\n\nHello, %s. \nYou can disconnect with '/disconnect' \n\nWrite a message ...\n", user.Name)
 
 	//We start go routines for sending and recieving messages.
@@ -71,19 +73,21 @@ func main() {
 
 func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceClient) {
 	for {
-		//read user message from the console.
+		//read user message from the console and decide what to do
 		message, err := readUserInput()
-		if message == "/disconnect" {
-			client.Leave(context.Background(), user)
-			log.Print("You have left the chat!")
-		} else if utf8.RuneCountInString(message) > 128 {
+		if utf8.RuneCountInString(message) > 128 {
 			log.Println("Your message must be no longer than 128 characters!")
 		} else if err != nil {
 			log.Fatalf("Ouch. Failed to read your chat message from the console: %v ", err)
-		} else {
-			//We increment lamport in order to give message a lamport timestamp.
+		} else if message == "/disconnect" {
+			//increment lamport and call Leave method to disconnect.
 			lamport++
-			//Create new clientMessage and send it to the server.
+			client.Leave(context.Background(), user)
+			//since the user won't recieve the broadcast leave message from the server after disconnecting we print a leave message for the client.
+			log.Print("You have left the chat!")
+		} else {
+			lamport++
+			//Create new clientMessage and send it to the server by calling BroadcastChatmessage.
 			clientMessage := &chitchat.ClientMessage{
 				Name:    chatClient.name,
 				Text:    message,
@@ -91,7 +95,7 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			}
 			_, err2 := client.BroadcastChatMessage(context.Background(), clientMessage)
 			if err2 != nil {
-				log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
+				log.Fatalf("Failed to send the clientMessage to server: %v\n", err2)
 			}
 		}
 	}
@@ -115,7 +119,7 @@ func (chatClient *chatClientStruct) ReceiveMessage(client chitchat.ChatServiceCl
 		lamport++
 
 		//Displaying the recieved chat message with lamport time stamp:
-		log.Printf(" - [%d] %s : %s", lamport, userStreamServerMessage.Name, userStreamServerMessage.Text)
+		log.Printf(" - [%d] %s: %s", lamport, userStreamServerMessage.Name, userStreamServerMessage.Text)
 	}
 }
 
@@ -123,7 +127,7 @@ func (chatClient *chatClientStruct) CreateUser(client chitchat.ChatServiceClient
 	//Generate a random id:
 	randSrc := rand.NewSource(time.Now().UnixNano())
 	randGen := rand.New(randSrc)
-	id := int32(randGen.Intn(10000)) // Generate a random integer and cast to int32
+	id := int32(randGen.Intn(999999)) // Generate a random integer and cast to int32
 	chatClient.id = id
 
 	//Ask client for username:
@@ -132,7 +136,7 @@ func (chatClient *chatClientStruct) CreateUser(client chitchat.ChatServiceClient
 		username, err := readUserInput()
 		if err != nil {
 			log.Fatalf("Failed to read username: %v", err)
-			continue //prompt the user to enter username again
+			continue //prompt the user to enter username againc if username not accepted
 		}
 		chatClient.name = username
 		//break out of the loop since we have a username
@@ -150,7 +154,7 @@ func (chatClient *chatClientStruct) CreateUser(client chitchat.ChatServiceClient
 func readUserInput() (string, error) {
 	reader := bufio.NewReader(os.Stdin)
 	userInput, err := reader.ReadString('\n')
-	//Trim message whitespace from beginning and end.
+	//Trim message spaces from beginning and end.
 	userInput = strings.TrimSpace(userInput)
 	return userInput, err
 }
