@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"homework3/chitchat"
 
@@ -23,6 +24,7 @@ type chatClientStruct struct {
 }
 
 var lamport int32
+var user *chitchat.User
 
 func main() {
 
@@ -45,7 +47,7 @@ func main() {
 	chatClient := chatClientStruct{}
 
 	//create user
-	user := chatClient.CreateUser(client)
+	user = chatClient.CreateUser(client)
 
 	log.Println("Connecting to the gRPC server at ... : " + serverAddress)
 	time.Sleep(time.Millisecond * time.Duration(1000))
@@ -57,7 +59,7 @@ func main() {
 	}
 	chatClient.stream = joinStream
 
-	log.Printf("\n\n\n Hello, %s. \n You can disconnect with '/disconnect' \n Write a message ...\n\n", user.Name)
+	log.Printf("\n\nHello, %s. \nYou can disconnect with '/disconnect' \n\nWrite a message ...\n", user.Name)
 
 	//We start go routines for sending and recieving messages.
 	go chatClient.SendChatMessage(client)
@@ -71,20 +73,26 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 	for {
 		//read user message from the console.
 		message, err := readUserInput()
-		if err != nil {
+		if message == "/disconnect" {
+			client.Leave(context.Background(), user)
+			log.Print("You have left the chat!")
+		} else if utf8.RuneCountInString(message) > 128 {
+			log.Println("Your message must be no longer than 128 characters!")
+		} else if err != nil {
 			log.Fatalf("Ouch. Failed to read your chat message from the console: %v ", err)
-		}
-		//We increment lamport in order to give message a lamport timestamp.
-		lamport++
-		//Create new clientMessage and send it to the server.
-		clientMessage := &chitchat.ClientMessage{
-			Name:    chatClient.name,
-			Text:    message,
-			Lamport: lamport,
-		}
-		_, err2 := client.BroadcastChatMessage(context.Background(), clientMessage)
-		if err2 != nil {
-			log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
+		} else {
+			//We increment lamport in order to give message a lamport timestamp.
+			lamport++
+			//Create new clientMessage and send it to the server.
+			clientMessage := &chitchat.ClientMessage{
+				Name:    chatClient.name,
+				Text:    message,
+				Lamport: lamport,
+			}
+			_, err2 := client.BroadcastChatMessage(context.Background(), clientMessage)
+			if err2 != nil {
+				log.Fatalf("Failed to send the clientMessage to server: %v\n", err)
+			}
 		}
 	}
 }

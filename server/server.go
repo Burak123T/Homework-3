@@ -61,34 +61,6 @@ func main() {
 var mutex sync.Mutex //We define a mutex to ensure only one client accesses the users map at a time
 //to maintain integrity
 
-func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinServer) error {
-
-	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
-	userLamport := User.Lamport
-	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
-	lamport = max(lamport, userLamport)
-	lamport++
-
-	// Send and broadcast a welcome message
-	welcomeMessage := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", User.Name, lamport)
-	message := &chitchat.ClientMessage{
-		Name:    User.Name,
-		Text:    welcomeMessage,
-		Lamport: lamport,
-	}
-	s.BroadcastChatMessage(context.Background(), message)
-
-	//Add user to map of userstreams.
-	newUserStream := &UserStream{
-		UserId: User.Id,    // Set the user's ID
-		Stream: userStream, // Set the gRPC stream
-	}
-
-	userStreams[User.Id] = newUserStream
-
-	select {}
-}
-
 func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
 	fmt.Println(" - ", message.Lamport, ":", message.Text)
 
@@ -118,3 +90,45 @@ func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.Cli
 		return clientMessage, nil
 	}
 }*/
+
+func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinServer) error {
+
+	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
+	userLamport := User.Lamport
+	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
+	lamport = max(lamport, userLamport)
+	lamport++
+
+	// Send and broadcast a welcome message
+	welcomeMessage := fmt.Sprintf("Participant %s joined Chitty-Chat at Lamport time %d", User.Name, lamport)
+	message := &chitchat.ClientMessage{
+		Name:    User.Name,
+		Text:    welcomeMessage,
+		Lamport: lamport,
+	}
+	s.BroadcastChatMessage(context.Background(), message)
+
+	//Add user to map of userstreams.
+	newUserStream := &UserStream{
+		UserId: User.Id,    // Set the user's ID
+		Stream: userStream, // Set the gRPC stream
+	}
+
+	userStreams[User.Id] = newUserStream
+
+	select {}
+}
+
+func (s *Server) Leave(ctx context.Context, User *chitchat.User) (*chitchat.Confirmation, error) {
+	delete(userStreams, User.Id)
+
+	//Broadcast leave message
+	leaveMessage := fmt.Sprintf("Participant %s left Chitty-Chat at Lamport time %d", User.Name, lamport)
+	message := &chitchat.ClientMessage{
+		Name:    User.Name,
+		Text:    leaveMessage,
+		Lamport: lamport,
+	}
+	s.BroadcastChatMessage(context.Background(), message)
+	return &chitchat.Confirmation{}, nil
+}
