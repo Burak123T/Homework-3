@@ -95,6 +95,7 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 			//increment lamport and call Leave method to disconnect.
 			lamport++
 			user.Lamport = lamport
+			user.Lamport = lamport
 			client.Leave(context.Background(), user)
 			//since the user won't recieve the broadcast leave message from the server after disconnecting we print a leave message for the client.
 			log.Print("You have left the chat!")
@@ -107,6 +108,7 @@ func (chatClient *chatClientStruct) SendChatMessage(client chitchat.ChatServiceC
 				Text:    message,
 				Lamport: lamport,
 			}
+			//If no error, the confirmation message from the server has been recieved
 			_, err2 := client.Broadcast(context.Background(), clientMessage)
 			if err2 != nil {
 				log.Fatalf("Failed to send the clientMessage to server: %v\n", err2)

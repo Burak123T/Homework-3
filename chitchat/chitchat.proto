@@ -16,7 +16,6 @@ message ServerMessage {
 }
 
 message Confirmation {
-    bool confirmation = 1;
 }
 
 message User {

@@ -150,8 +150,6 @@ type Confirmation struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Confirmation bool `protobuf:"varint,1,opt,name=confirmation,proto3" json:"confirmation,omitempty"`
 }
 
 func (x *Confirmation) Reset() {
@@ -183,7 +181,7 @@ func (x *Confirmation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Confirmation.ProtoReflect.Descriptor instead.
 func (*Confirmation) Descriptor() ([]byte, []int) {
-	return file_chitchat_proto_rawDescGZIP(), []int{2}
+	return file_chitchat_chitchat_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *Confirmation) GetConfirmation() bool {
@@ -316,6 +314,12 @@ var file_chitchat_proto_goTypes = []interface{}{
 var file_chitchat_proto_depIdxs = []int32{
 	3, // 0: chitchat.ChatService.Join:input_type -> chitchat.User
 	3, // 1: chitchat.ChatService.Leave:input_type -> chitchat.User
+	0, // 2: chitchat.ChatService.Broadcast:input_type -> chitchat.ClientMessage
+	1, // 3: chitchat.ChatService.Join:output_type -> chitchat.ServerMessage
+	2, // 4: chitchat.ChatService.Leave:output_type -> chitchat.Confirmation
+	2, // 5: chitchat.ChatService.Broadcast:output_type -> chitchat.Confirmation
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // 2: chitchat.ChatService.Broadcast:input_type -> chitchat.ClientMessage
 	1, // 3: chitchat.ChatService.Join:output_type -> chitchat.ServerMessage
 	2, // 4: chitchat.ChatService.Leave:output_type -> chitchat.Confirmation

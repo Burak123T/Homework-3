@@ -57,6 +57,7 @@ func main() {
 var mutex sync.Mutex
 
 func (s *Server) Broadcast(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
+func (s *Server) Broadcast(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
 	messageLamport := message.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
 	mutex.Lock()
@@ -95,6 +96,7 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 		Lamport: lamport,
 	}
 	s.Broadcast(context.Background(), message)
+	s.Broadcast(context.Background(), message)
 
 	//Add user to map of userstreams.
 	newUserStream := &UserStream{
@@ -111,8 +113,8 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 
 func (s *Server) Leave(ctx context.Context, User *chitchat.User) (*chitchat.Confirmation, error) {
 
-	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
 	userLamport := User.Lamport
+	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
 	mutex.Lock()
 	lamport = max(lamport, userLamport)
 	lamport++
