@@ -57,7 +57,6 @@ func main() {
 var mutex sync.Mutex
 
 func (s *Server) Broadcast(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
-func (s *Server) Broadcast(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
 	messageLamport := message.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
 	mutex.Lock()
