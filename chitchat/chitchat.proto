@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package chitchat;
+option go_package = "./chitchat";
+
+message ClientMessage {
+    string name = 1;
+    string text = 2;
+    int32 lamport = 3;
+}
+
+message ServerMessage {
+    string name = 1;
+    string text = 2;
+    int32 lamport = 3;
+}
+
+message Confirmation {
+}
+
+message User {
+    int32 id = 1;
+    string name = 2;
+    int32 lamport = 3;
+}
+
+service ChatService {
+    rpc Join(User) returns (stream ServerMessage);
+    rpc Leave(User) returns (Confirmation);
+    rpc Broadcast (ClientMessage) returns (Confirmation);
+}
+
