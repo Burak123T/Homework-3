@@ -95,7 +95,6 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 		Lamport: lamport,
 	}
 	s.Broadcast(context.Background(), message)
-	s.Broadcast(context.Background(), message)
 
 	//Add user to map of userstreams.
 	newUserStream := &UserStream{
