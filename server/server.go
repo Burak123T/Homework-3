@@ -56,7 +56,7 @@ func main() {
 
 var mutex sync.Mutex
 
-func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
+func (s *Server) Broadcast(ctx context.Context, message *chitchat.ClientMessage) (*chitchat.Confirmation, error) {
 	messageLamport := message.Lamport
 	//Use mutex to ensure consistency in the lamport timestamp across the server and all connected clients.
 	mutex.Lock()
@@ -78,15 +78,6 @@ func (s *Server) BroadcastChatMessage(ctx context.Context, message *chitchat.Cli
 	return &chitchat.Confirmation{}, nil
 }
 
-//not used anymore
-/*func (s *Server) BroadcastListener(context.Context, *chitchat.User) (*chitchat.ClientMessage, error) {
-	for {
-		clientMessage := <-msgCh
-		// Send the received message to the client
-		return clientMessage, nil
-	}
-}*/
-
 func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinServer) error {
 
 	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
@@ -103,7 +94,7 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 		Text:    welcomeMessage,
 		Lamport: lamport,
 	}
-	s.BroadcastChatMessage(context.Background(), message)
+	s.Broadcast(context.Background(), message)
 
 	//Add user to map of userstreams.
 	newUserStream := &UserStream{
@@ -119,6 +110,14 @@ func (s *Server) Join(User *chitchat.User, userStream chitchat.ChatService_JoinS
 }
 
 func (s *Server) Leave(ctx context.Context, User *chitchat.User) (*chitchat.Confirmation, error) {
+
+	//Compare lamport timestamps and select the highest value, then increment to maintain lamport time stamp across chat room.
+	userLamport := User.Lamport
+	mutex.Lock()
+	lamport = max(lamport, userLamport)
+	lamport++
+	mutex.Unlock()
+
 	//delete the userstream mapped to the given id from the userstreams map.
 	//Use mutex to ensure consistency in shared resource userStreams.
 	mutex.Lock()
@@ -132,6 +131,6 @@ func (s *Server) Leave(ctx context.Context, User *chitchat.User) (*chitchat.Conf
 		Text:    leaveMessage,
 		Lamport: lamport,
 	}
-	s.BroadcastChatMessage(context.Background(), message)
+	s.Broadcast(context.Background(), message)
 	return &chitchat.Confirmation{}, nil
 }

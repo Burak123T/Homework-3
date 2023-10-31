@@ -28,7 +28,6 @@ message User {
 service ChatService {
     rpc Join(User) returns (stream ServerMessage);
     rpc Leave(User) returns (Confirmation);
-    rpc BroadcastChatMessage (ClientMessage) returns (Confirmation);
-    rpc BroadcastListener(User) returns (Confirmation);
+    rpc Broadcast (ClientMessage) returns (Confirmation);
 }
 
